@@ -25,6 +25,44 @@ class _Pnt:
         self.y = yy
         self.z = zz
 
+def getPosTranMat(node):
+    if "matrix" in node:
+        return np.mat(node["matrix"]).T
+    else:
+        #单位矩阵
+        matrix = np.matlib.eye(4)
+        if "translation" in node:
+            matrix[0, 3] =  node["translation"][0]
+            matrix[1, 3] =  node["translation"][1]
+            matrix[2, 3] =  node["translation"][2]
+        if "rotation" in node:
+            w = node["rotation"][0]
+            x = node["rotation"][1]
+            y = node["rotation"][2]
+            z = node["rotation"][3]
+            #四元数转矩阵
+            rotationMat = np.mat([
+                [1 - 2*(y**2) - 2*(z**2), 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0],
+                [2*x*y + 2*z*w, 1 - 2*(x**2) - 2*(z**2), 2*x*z + 2*y*w, 0],
+                [2*x*z - 2*y*w, 2*y*z + 2*x*w, 1 - 2*(x**2) - 2*(y**2), 0],
+                [0, 0, 0, 1]
+            ])
+            matrix = matrix*rotationMat
+        if "scale" in node:
+            scaleMat = np.mat([
+                [node["scale"][0],0,0,0],
+                [0,node["scale"][1],0,0],
+                [0,0,node["scale"][2],0],
+                [0,0,0,1]
+            ])
+            matrix = matrix*scaleMat
+        return matrix
+
+def posTran(x,y,z,matrix):
+    vec4 = np.mat([[x],[y],[z],[1]])
+    vec4 = matrix*vec4
+    return vec4[0,0],vec4[1,0],vec4[2,0]
+
 def normalizeUV(u):
     '''
      解析点uv坐标，假设平铺，uv坐标转换
@@ -63,6 +101,7 @@ def getPnt(gltf, fBin):
     
     for node in nodes:
         #print(node)
+        tranMat = getPosTranMat(gltf["nodes"][node])
         if 'mesh' in gltf["nodes"][node]:
             mesh = gltf["nodes"][node]["mesh"]
             for primitive in gltf["meshes"][mesh]["primitives"]:
@@ -74,9 +113,11 @@ def getPnt(gltf, fBin):
                 for i in range(0, count):
                     #解析点位置
                     _newPnt = _Pnt()
-                    _newPnt.x = struct.unpack('f', fBin.read(4))[0]
-                    _newPnt.y = struct.unpack('f', fBin.read(4))[0]
-                    _newPnt.z = struct.unpack('f', fBin.read(4))[0]
+                    [_newPnt.x, _newPnt.y ,_newPnt.z ] = posTran(
+                        struct.unpack('f', fBin.read(4))[0],
+                        struct.unpack('f', fBin.read(4))[0],
+                        struct.unpack('f', fBin.read(4))[0],
+                        tranMat)
                     allPnt.append(_newPnt)
 
                 #if TEXCOORD_1 exist
@@ -242,17 +283,18 @@ def insertPoint(allPnt, sizeA = 1):
                 #纹理坐标设置
                 [_pnt.u , _pnt.v] = xyz2uv(dimRedMat ,affineMat, _pnt)
                 #RGBA设置
-                realu = int(u*_pnt.u)
-                realv = int(v*_pnt.v)
-                _pnt.imgSource = allPnt[i].imgSource
-                if _pnt.imgSource > -1:
+                
+                if allPnt[i].imgSource > -1:
+                    realu = int(u*_pnt.u)
+                    realv = int(v*_pnt.v)
+                    _pnt.imgSource = allPnt[i].imgSource
                     _pnt.r = allImg[_pnt.imgSource][realu][realv][0]
                     _pnt.g = allImg[_pnt.imgSource][realu][realv][1]
                     _pnt.b = allImg[_pnt.imgSource][realu][realv][2]
 
                 #pnt入链表
                 allPnt.append(_pnt)
-                print(_pnt.x, _pnt.y, _pnt.z, _pnt.u, _pnt.v,_pnt.r, _pnt.g,_pnt.b)
+                #print(_pnt.x, _pnt.y, _pnt.z, _pnt.u, _pnt.v,_pnt.r, _pnt.g,_pnt.b)
 
                 #子三角形入队
                 triQ.put([pnt1, pnt2, _pnt])
