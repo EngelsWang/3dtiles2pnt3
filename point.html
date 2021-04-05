@@ -29,8 +29,8 @@
 			function initCamera() {
 
 				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
-				camera.position.set(5, 0, 10);
-				camera.lookAt(new THREE.Vector3(-23, 10, -33));
+				camera.position.set(11958.65234375, 15.542887687683105, -71967.5);
+				camera.lookAt(new THREE.Vector3(11958.65234375, 15.542887687683105, -71967.5));
 
 			}
 
@@ -55,7 +55,10 @@
 			function initControls() {
 
 				controls = new THREE.OrbitControls(camera, renderer.domElement);
-
+				controls.panSpeed = 0.01;
+				controls.rotateSpeed = 0.01;
+				controls.zoomSpeed = 0.01;
+				console.log(controls.panSpeed);
 				/* 属性参数默认 */
 
 			}
@@ -79,7 +82,7 @@
        		 	);
 				
 
-				fetch('luogang2_1.pnt').then(function(response) {
+				fetch('luogang_all.pnt').then(function(response) {
 					response.arrayBuffer().then(function(buffer) {
 						var l = buffer.byteLength / 2;
 						pos = new Float32Array(buffer, 0, l/4);
@@ -102,29 +105,7 @@
 						
 					})
 				});
-				fetch('luogang1_201.pnt').then(function(response) {
-					response.arrayBuffer().then(function(buffer) {
-						var l = buffer.byteLength / 2;
-						pos = new Float32Array(buffer, 0, l/4);
-						col = new Uint32Array(buffer,l, l/4);
-						for(let i = 0; i < pos.length; i = i+3)
-						{
-							var x = pos[i];
-							var y = pos[i+1];
-							var z = pos[i+2];
-							geometry.vertices.push(new THREE.Vector3(x,y,z));
-							var r = col[i]/255;
-							var g = col[i+1]/255;
-							var b = col[i+2]/255;
-							geometry.colors.push(new THREE.Color(b,g,r));
-						}
-						var cloud =new THREE.Points(geometry, material);
-						console.log(cloud);
-						scene.add(cloud); 
-						console.log(scene);
-						
-					})
-				});
+				
 
 				/*fetch('color.pntcol').then(function(response) {
 					response.arrayBuffer().then(function(buffer) {
