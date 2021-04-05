@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>	
+		<script src="build/three.js"></script>
+		<script src="build/OrbitControls.js"></script>
+		<script src="build/stats.min.js"></script>
+		<script src="build/dat.gui.min.js"></script>
+		<script src="node_modules/three/examples/js/WebGL.js"></script>
+		<script>
+            var scene, camera, renderer, controls, guiControls;
+			var stats = initStats();
+
+			/* 场景 */
+			function initScene() {
+
+				scene = new THREE.Scene();
+
+			}
+
+			/* 相机 */
+			function initCamera() {
+
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+				camera.position.set(5, 0, 10);
+				camera.lookAt(new THREE.Vector3(-23, 10, -33));
+
+			}
+
+			/* 渲染器 */
+			function initRender() {
+
+				renderer = new THREE.WebGLRenderer({antialias: true});
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setClearColor(0x8FBC8F);
+				document.body.appendChild(renderer.domElement);
+
+			}
+
+			/* 灯光 */
+			function initLight() {
+
+				scene.add(new THREE.AmbientLight(0xffffff, 10));
+
+			}
+
+			/* 控制器 */
+			function initControls() {
+
+				controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+				/* 属性参数默认 */
+
+			}
+
+			/* 调试插件 */
+			function initGui() {
+
+				guiControls = new function () {
+
+				};
+
+				let controls = new dat.GUI({width: 200});
+
+			}
+
+			/* 场景中的内容 */
+			async function initContent() {
+				var geometry = new THREE.Geometry();
+		        var material = new THREE.PointsMaterial(
+            			{size: 0.1, vertexColors: true, color: 0xffffff}
+       		 	);
+				
+
+				fetch('luogang2_1.pnt').then(function(response) {
+					response.arrayBuffer().then(function(buffer) {
+						var l = buffer.byteLength / 2;
+						pos = new Float32Array(buffer, 0, l/4);
+						col = new Uint32Array(buffer,l, l/4);
+						for(let i = 0; i < pos.length; i = i+3)
+						{
+							var x = pos[i];
+							var y = pos[i+1];
+							var z = pos[i+2];
+							geometry.vertices.push(new THREE.Vector3(x,y,z));
+							var r = col[i]/255;
+							var g = col[i+1]/255;
+							var b = col[i+2]/255;
+							geometry.colors.push(new THREE.Color(b,g,r));
+						}
+						var cloud =new THREE.Points(geometry, material);
+						console.log(cloud);
+						scene.add(cloud); 
+						console.log(scene);
+						
+					})
+				});
+				fetch('luogang1_201.pnt').then(function(response) {
+					response.arrayBuffer().then(function(buffer) {
+						var l = buffer.byteLength / 2;
+						pos = new Float32Array(buffer, 0, l/4);
+						col = new Uint32Array(buffer,l, l/4);
+						for(let i = 0; i < pos.length; i = i+3)
+						{
+							var x = pos[i];
+							var y = pos[i+1];
+							var z = pos[i+2];
+							geometry.vertices.push(new THREE.Vector3(x,y,z));
+							var r = col[i]/255;
+							var g = col[i+1]/255;
+							var b = col[i+2]/255;
+							geometry.colors.push(new THREE.Color(b,g,r));
+						}
+						var cloud =new THREE.Points(geometry, material);
+						console.log(cloud);
+						scene.add(cloud); 
+						console.log(scene);
+						
+					})
+				});
+
+				/*fetch('color.pntcol').then(function(response) {
+					response.arrayBuffer().then(function(buffer) {
+						col = new Uint32Array(buffer);
+						for(let i = 0; i < 9; i = i+3)
+						{
+							
+						}
+					});
+				});*/
+
+				
+                
+			}
+
+			/* 性能插件 */
+			function initStats() {
+
+				let stats = new Stats();
+
+				document.body.appendChild(stats.domElement);
+
+				return stats;
+
+			}
+
+			/* 窗口变动触发 */
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+
+			}
+
+			/* 数据更新 */
+			function update() {
+
+				stats.update();
+
+			}
+
+			/* 初始化 */
+			function init() {
+
+				initScene();
+				initCamera();
+				initRender();
+				initLight();
+				initControls();
+				initContent();
+				initGui();
+
+				/* 监听事件 */
+				window.addEventListener('resize', onWindowResize, false);
+
+			}
+
+			/* 循环渲染 */
+			function animate() {
+
+				requestAnimationFrame(animate);
+				renderer.render(scene, camera);
+				update();
+
+			}
+
+			/* 初始加载 */
+			(function () {
+				console.log("three init start...");
+
+				init();
+				//console.log(scene);
+				animate();
+
+				console.log("three init send...");
+			})();
+		</script>
+	</body>
+</html>
