@@ -20,15 +20,15 @@ class _Pnt:
         self.y = yy
         self.z = zz
 
-def getTileset():
-    f = open("tileset.json", 'r')
+def getTileset(folderName):
+    f = open(folderName+"/tileset.json", 'r')
     content = f.read()
     tiles = json.loads(content)
     f.close()
     del content
     return tiles
 
-def _getBufferOffset(param):
+def _getBufferOffset(gltf, param):
     '''
     Get buffer byteOffset
     # param: indice of assossor
@@ -61,7 +61,7 @@ def getPnt(gltf, fBin):
             for primitive in gltf["meshes"][mesh]["primitives"]:
                 #get indices
                 position = primitive["attributes"]["POSITION"]
-                [byteOffset,count] =_getBufferOffset(position)
+                [byteOffset,count] =_getBufferOffset(gltf, position)
                 fBin.seek(byteOffset + fseek,0)
                 for i in range(0, count):
                     _newPnt = _Pnt()
@@ -74,7 +74,7 @@ def getPnt(gltf, fBin):
                 if "TEXCOORD_0" in primitive["attributes"]:
                     ##print("Texture1")
                     texcoord_0 = primitive["attributes"]["TEXCOORD_0"]
-                    [byteOffset,count] =_getBufferOffset(texcoord_0)
+                    [byteOffset,count] =_getBufferOffset(gltf, texcoord_0)
                     fBin.seek(byteOffset + fseek,0)
                     for i in range(0, count):
                         allPnt[i - count] = struct.unpack('f', fBin.read(4))[0]
@@ -82,7 +82,7 @@ def getPnt(gltf, fBin):
     fBin.seek(fseek)
     return allPnt
 
-def readB3dm(fname)
+def readB3dm(fname):
     fb3dm = open(fname,"rb")
 
     # b3dmHeader
@@ -107,7 +107,13 @@ def readB3dm(fname)
 
     d = getPnt(gltf, fb3dm)
     fb3dm.close()
+    return d
 
 def read3dTilesB3dm(fname):
     # get tileset.json
-    tiles = getTileset()
+    tiles = getTileset(fname)
+    root = tiles['root']
+    uri = root['content']['uri'] 
+    d = readB3dm(uri)
+    print(d)
+    
