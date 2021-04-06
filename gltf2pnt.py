@@ -36,10 +36,11 @@ def getPosTranMat(node):
             matrix[1, 3] =  node["translation"][1]
             matrix[2, 3] =  node["translation"][2]
         if "rotation" in node:
-            w = node["rotation"][0]
-            x = node["rotation"][1]
-            y = node["rotation"][2]
-            z = node["rotation"][3]
+            #实部在末端
+            x = node["rotation"][0]
+            y = node["rotation"][1]
+            z = node["rotation"][2]
+            w = node["rotation"][3]
             #四元数转矩阵
             rotationMat = np.mat([
                 [1 - 2*(y**2) - 2*(z**2), 2*x*y - 2*z*w, 2*x*z + 2*y*w, 0],
@@ -275,7 +276,7 @@ def xyz2uv(dimRedMat, affineMat, pnt):
 def insertPoint(allPnt, sizeA = 1):
     for i in range(0, len(allPnt), 3):
         #用于表示是否需要采样
-        if isTriangle(allPnt[i], allPnt[i + 1], allPnt[i + 2]):
+        if triangleArea(allPnt[i], allPnt[i + 1], allPnt[i + 2]) > 0:
             # 获取uv变换矩阵
             [dimRedMat, affineMat]= getTransMat(allPnt[i], allPnt[i + 1], allPnt[i + 2])
         else:
