@@ -5,7 +5,6 @@ import cv2 as cv
 import queue
 import numpy as np
 import sympy
-import numpy.matlib
 
 class _Pnt:
     '''
@@ -80,7 +79,10 @@ def _getBufferOffset(param):
     '''
     accessor = gltf["accessors"][param]
     bufferView = accessor["bufferView"]
-    bufferViewOffset = gltf["bufferViews"][bufferView]["byteOffset"]
+    if "byteOffset" in gltf["bufferViews"][bufferView]:
+        bufferViewOffset = gltf["bufferViews"][bufferView]["byteOffset"]
+    else:
+        bufferViewOffset = 0
     if "byteOffset" in accessor:
         byteOffset = accessor["byteOffset"]
     else:
@@ -121,7 +123,7 @@ def getPnt(gltf, fBin):
                         tranMat)
                     allPnt.append(_newPnt)
 
-                #if TEXCOORD_1 exist
+                #if TEXCOORD_1 exist，纹理坐标
                 if "TEXCOORD_0" in primitive["attributes"]:
                     texcoord_0 = primitive["attributes"]["TEXCOORD_0"]
                     [byteOffset,count] =_getBufferOffset(texcoord_0)
@@ -140,15 +142,28 @@ def getPnt(gltf, fBin):
                         textureIndex = pbrMetallicRoughness["baseColorTexture"]["index"]
                         imgSource = gltf["textures"][textureIndex]["source"]
                         if not imgSource in allImg:
-                            imgURI = gltf["images"][imgSource]["uri"]
-                            allImg[imgSource] = cv.imread(imgURI)
+                            if "uri" in gltf["images"][imgSource]:
+                                imgURI = gltf["images"][imgSource]["uri"]
+                                allImg[imgSource] = cv.imread(imgURI)
+                            else:
+                                #图片存储在buffer中
+                                bufferview = gltf["images"][imgSource]["bufferView"]
+                                if gltf["images"][imgSource]["mimeType"] == "image/jpeg":
+                                    byteOffset = gltf["bufferViews"][bufferview]["byteOffset"]
+                                    byteLength = gltf["bufferViews"][bufferview]["byteLength"]
+                                    fBin.seek(byteOffset + fseek)
+                                    imgNpArr = np.frombuffer(fBin.read(byteLength), np.uint8)
+                                    allImg[imgSource] = cv.imdecode(imgNpArr, cv.IMREAD_COLOR)
 
                         [u, v, t] = allImg[imgSource].shape
+                        u = u-1
+                        v = v-1
                         for i in range(0, count):
                             _idx = i - count
                             realu = int(u*allPnt[_idx].u)
                             realv = int(v*allPnt[_idx].v)
                             allPnt[_idx].imgSource = imgSource
+                            ## python 图像存储为bgr，此次需修改
                             allPnt[_idx].r = allImg[imgSource][realu][realv][0]
                             allPnt[_idx].g = allImg[imgSource][realu][realv][1]
                             allPnt[_idx].b = allImg[imgSource][realu][realv][2]
