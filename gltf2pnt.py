@@ -5,6 +5,7 @@ import cv2 as cv
 import queue
 import numpy as np
 import sympy
+from numpy import numpy.matlib
 
 class _Pnt:
     '''
