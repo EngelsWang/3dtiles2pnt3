@@ -319,7 +319,60 @@ def insertPoint(allPnt, sizeA = 1):
                 triQ.put([pnt2, pnt3, _pnt])
                 triQ.put([pnt1, pnt3, _pnt])
     
+def lineArea(s,Asize = 0.1):
+    return int(s//Asize)
 
+def randomInsert(allPnt, func):
+    '''
+    随机数插值
+    func为回调函数
+    '''
+    for i in range(0, len(allPnt), 3):
+        print("\r已处理%d个三角形" %(i/3),end= " ")
+        #用于表示是否需要采样
+        if triangleArea(allPnt[i], allPnt[i + 1], allPnt[i + 2]) > 0:
+            # 获取uv变换矩阵
+            [dimRedMat, affineMat]= getTransMat(allPnt[i], allPnt[i + 1], allPnt[i + 2])
+        else:
+            continue
+        # 获取源图像
+        if allPnt[i].imgSource > -1:
+            [u, v, t] = allImg[allPnt[i].imgSource].shape
+
+        pointNum = func(triangleArea(allPnt[i], allPnt[i + 1], allPnt[i + 2]))
+        #print(pointNum)
+        for j in range(0, pointNum):
+            # 随机数
+            s = random.random()
+            t = random.random()
+            #print(s,t)
+            # 镜像变换
+            if s + t > 1:
+                s = 1 - s
+                t = 1 - t
+            a = 1 - s - t
+            b = s
+            c = t
+            _pntXYZ = a*np.mat([allPnt[i].x, allPnt[i].y, allPnt[i].z]) + \
+                        b*np.mat([allPnt[i+1].x, allPnt[i+1].y, allPnt[i+1].z]) + \
+                        c*np.mat([allPnt[i+2].x, allPnt[i+2].y, allPnt[i+2].z])
+            #坐标设置
+            _pnt = _Pnt(_pntXYZ[0,0], _pntXYZ[0,1], _pntXYZ[0,2])
+            #纹理坐标设置
+            [_pnt.u , _pnt.v] = xyz2uv(dimRedMat ,affineMat, _pnt)
+            #RGBA设置
+            
+            if allPnt[i].imgSource > -1:
+                realu = int(u*_pnt.u)
+                realv = int(v*_pnt.v)
+                _pnt.imgSource = allPnt[i].imgSource
+                _pnt.r = allImg[_pnt.imgSource][realu][realv][0]
+                _pnt.g = allImg[_pnt.imgSource][realu][realv][1]
+                _pnt.b = allImg[_pnt.imgSource][realu][realv][2]
+            #pnt入链表
+            allPnt.append(_pnt)
+            #print(_pnt.x, _pnt.y, _pnt.z, _pnt.u, _pnt.v,_pnt.r, _pnt.g,_pnt.b)
+    
 def readGLTFjosn(fname):
     fGltf = open(fname, 'r')
     content = fGltf.read()
