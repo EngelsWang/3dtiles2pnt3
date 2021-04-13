@@ -6,6 +6,7 @@ import queue
 import numpy as np
 import sympy
 from numpy import numpy.matlib
+import random
 
 class _Pnt:
     '''
