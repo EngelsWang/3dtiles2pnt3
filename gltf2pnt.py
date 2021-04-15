@@ -8,6 +8,8 @@ import sympy
 import numpy.matlib
 import random
 
+
+
 class _Pnt:
     '''
         Position: x, y, z
@@ -242,6 +244,7 @@ def getTransMat(pnt1, pnt2, pnt3):
 
     #--------------二维---------------
     #二维仿射变换
+    '''
     m11 = sympy.Symbol('m11')
     m12 = sympy.Symbol('m12')
     m21 = sympy.Symbol('m21')
@@ -264,6 +267,18 @@ def getTransMat(pnt1, pnt2, pnt3):
         [result[m21],result[m22],result[yt]],
         [0,0,1]
         ],dtype = float)
+    '''
+    m11=(-P[1,0]*pnt2.u + P[1,0]*pnt3.u + P[1,1]*pnt1.u - P[1,1]*pnt3.u - P[1,2]*pnt1.u + P[1,2]*pnt2.u)/(P[0,0]*P[1,1] - P[0,0]*P[1,2] - P[0,1]*P[1,0] + P[0,1]*P[1,2] + P[0,2]*P[1,0] - P[0,2]*P[1,1])
+    m12=(P[0,0]*pnt2.u - P[0,0]*pnt3.u - P[0,1]*pnt1.u + P[0,1]*pnt3.u + P[0,2]*pnt1.u - P[0,2]*pnt2.u)/(P[0,0]*P[1,1] - P[0,0]*P[1,2] - P[0,1]*P[1,0] + P[0,1]*P[1,2] + P[0,2]*P[1,0] - P[0,2]*P[1,1])
+    xt=(P[0,0]*P[1,1]*pnt3.u - P[0,0]*P[1,2]*pnt2.u - P[0,1]*P[1,0]*pnt3.u + P[0,1]*P[1,2]*pnt1.u + P[0,2]*P[1,0]*pnt2.u - P[0,2]*P[1,1]*pnt1.u)/(P[0,0]*P[1,1] - P[0,0]*P[1,2] - P[0,1]*P[1,0] + P[0,1]*P[1,2] + P[0,2]*P[1,0] - P[0,2]*P[1,1])
+    m21=(-P[1,0]*pnt2.v + P[1,0]*pnt3.v + P[1,1]*pnt1.v - P[1,1]*pnt3.v - P[1,2]*pnt1.v + P[1,2]*pnt2.v)/(P[0,0]*P[1,1] - P[0,0]*P[1,2] - P[0,1]*P[1,0] + P[0,1]*P[1,2] + P[0,2]*P[1,0] - P[0,2]* P[1,1])
+    m22=(P[0,0]*pnt2.v - P[0,0]*pnt3.v - P[0,1]*pnt1.v + P[0,1]*pnt3.v + P[0,2]*pnt1.v - P[0,2]*pnt2.v)/(P[0,0]*P[1,1] - P[0,0]*P[1,2] - P[0,1]*P[1,0] + P[0,1]*P[1,2] + P[0,2]*P[1,0] - P[0,2]*P[1,1])
+    yt=(P[0,0]*P[1,1]*pnt3.v - P[0,0]*P[1,2]*pnt2.v - P[0,1]*P[1,0]*pnt3.v + P[0,1]*P[1,2]*pnt1.v + P[0,2]*P[1,0]*pnt2.v - P[0,2]*P[1,1]*pnt1.v)/(P[0,0]*P[1,1] - P[0,0]*P[1,2] - P[0,1]*P[1,0] + P[0,1]*P[1,2] + P[0,2]*P[1,0] - P[0,2]*P[1,1])
+    R4 = np.mat([
+        [m11,m12,xt],
+        [m21,m22,yt],
+        [0,0,1]
+        ],dtype = float)
     return R3*R2*R1,R4
 
 def xyz2uv(dimRedMat, affineMat, pnt):
@@ -275,7 +290,7 @@ def xyz2uv(dimRedMat, affineMat, pnt):
 
 def insertPoint(allPnt,  allImg, sizeA = 1):
     for i in range(0, len(allPnt), 3):
-        print("\r已处理%d个三角形" %(i/3),end= " ")
+        #print("\r已处理%d个三角形" %(i/3),end= " ")
         #用于表示是否需要采样
         if triangleArea(allPnt[i], allPnt[i + 1], allPnt[i + 2]) > 0:
             # 获取uv变换矩阵
@@ -328,7 +343,7 @@ def randomInsert(allPnt, allImg, func = lineArea):
     func为回调函数
     '''
     for i in range(0, len(allPnt), 3):
-        print("\r已处理%d个三角形" %(i/3),end= " ")
+        #print("\r已处理%d个三角形" %(i/3),end= " ")
         #用于表示是否需要采样
         if triangleArea(allPnt[i], allPnt[i + 1], allPnt[i + 2]) > 0:
             # 获取uv变换矩阵
@@ -380,6 +395,7 @@ def readGLTFjosn(fname):
     fGltf.close()
     return gltf
 
+
 def gltf2pnt(fgltf,fbin,insert = 0,sizeA = 0.1):
     gltf=readGLTFjosn(fgltf)
     fBin = open(fbin, "rb")
@@ -392,9 +408,10 @@ def gltf2pnt(fgltf,fbin,insert = 0,sizeA = 0.1):
     if insert != 0:
         print("insert begin.")
         if insert == 1:
-            gltfPnts = insertPoint(gltfPnts, allImg, sizeA = sizeA)
+            insertPoint(gltfPnts, allImg, sizeA = sizeA)
         elif insert == 2:
-            gltfPnts = randomInsert(gltfPnts, allImg, func = lineArea(sizeA = sizeA))
+            randomInsert(gltfPnts, allImg)
         print("insert done.")
 
     return gltfPnts
+
