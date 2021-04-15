@@ -5,7 +5,7 @@ import cv2 as cv
 import queue
 import numpy as np
 import sympy
-from numpy import numpy.matlib
+import numpy.matlib
 import random
 
 class _Pnt:
@@ -75,7 +75,7 @@ def normalizeUV(u):
         u = u + 1
     return u
 
-def _getBufferOffset(param):
+def _getBufferOffset(param, gltf):
     '''
     Get buffer byteOffset
     # param: indice of assossor
@@ -94,7 +94,7 @@ def _getBufferOffset(param):
     # 避免两次重定位
     return bufferViewOffset + byteOffset, count
 
-def getPnt(gltf, fBin):
+def getPnt(gltf, fBin, allImg):
     '''
     get gltf's all positions
     gltf: json object, 
@@ -113,7 +113,7 @@ def getPnt(gltf, fBin):
             for primitive in gltf["meshes"][mesh]["primitives"]:
                 #get indices
                 position = primitive["attributes"]["POSITION"]
-                [byteOffset,count] =_getBufferOffset(position)
+                [byteOffset,count] =_getBufferOffset(position, gltf)
                 fBin.seek(byteOffset + fseek)
                 #print(count)
                 for i in range(0, count):
@@ -129,7 +129,7 @@ def getPnt(gltf, fBin):
                 #if TEXCOORD_1 exist，纹理坐标
                 if "TEXCOORD_0" in primitive["attributes"]:
                     texcoord_0 = primitive["attributes"]["TEXCOORD_0"]
-                    [byteOffset,count] =_getBufferOffset(texcoord_0)
+                    [byteOffset,count] =_getBufferOffset(texcoord_0, gltf)
                     fBin.seek(byteOffset + fseek)
                     for i in range(0, count):
                         #解析点uv坐标，假设平铺，uv坐标转换
@@ -172,8 +172,6 @@ def getPnt(gltf, fBin):
                             allPnt[_idx].b = allImg[imgSource][realu][realv][2]
                             if t == 4:
                                 allPnt[_idx].a = allImg[imgSource][realu][realv][3]
-
-
 
     fBin.seek(fseek)
     return allPnt
@@ -275,8 +273,9 @@ def xyz2uv(dimRedMat, affineMat, pnt):
     P = affineMat * P
     return P[0,0],P[1,0]
 
-def insertPoint(allPnt, sizeA = 1):
+def insertPoint(allPnt,  allImg, sizeA = 1):
     for i in range(0, len(allPnt), 3):
+        print("\r已处理%d个三角形" %(i/3),end= " ")
         #用于表示是否需要采样
         if triangleArea(allPnt[i], allPnt[i + 1], allPnt[i + 2]) > 0:
             # 获取uv变换矩阵
@@ -320,10 +319,10 @@ def insertPoint(allPnt, sizeA = 1):
                 triQ.put([pnt2, pnt3, _pnt])
                 triQ.put([pnt1, pnt3, _pnt])
     
-def lineArea(s,Asize = 0.1):
-    return int(s//Asize)
+def lineArea(s,sizeA = 0.1):
+    return int(s//sizeA)
 
-def randomInsert(allPnt, func):
+def randomInsert(allPnt, allImg, func = lineArea):
     '''
     随机数插值
     func为回调函数
@@ -381,12 +380,21 @@ def readGLTFjosn(fname):
     fGltf.close()
     return gltf
 
-
-
-def readBin(fname, gltf):
-    fBin = open(fname, "rb")
+def gltf2pnt(fgltf,fbin,insert = 0,sizeA = 0.1):
+    gltf=readGLTFjosn(fgltf)
+    fBin = open(fbin, "rb")
     allImg = {}
-    gltfPnts = getPnt(gltf, fBin)
-    insertPoint(gltfPnts, sizeA = 10)
+    print("get vertix begin.")
+    gltfPnts = getPnt(gltf, fBin, allImg)
+    print("get vertix done.")
     fBin.close()
+    
+    if insert != 0:
+        print("insert begin.")
+        if insert == 1:
+            gltfPnts = insertPoint(gltfPnts, allImg, sizeA = sizeA)
+        elif insert == 2:
+            gltfPnts = randomInsert(gltfPnts, allImg, func = lineArea(sizeA = sizeA))
+        print("insert done.")
 
+    return gltfPnts
